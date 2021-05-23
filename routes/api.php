@@ -15,11 +15,12 @@ use App\Http\Controllers\MiniURL;
 |
 */
 
-Route::post('/shorten', function (Request $request) {
+Route::post('/short', function (Request $request) {
     $miniUrl = new MiniURL();
-    return $miniUrl->short($request->post('url'));
+    return $miniUrl->short($request->all());
 });
 
-Route::get('/miniurl/{url}', function (Request $request, $url) {
-    return $url;
+Route::get('/short', function (Request $request) {
+    $miniUrl = new MiniURL();
+    return $miniUrl->find($request->get('url'));
 });

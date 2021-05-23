@@ -2,53 +2,75 @@
 
 namespace App\Http\Classes;
 
-use App\Http\Classes\JsonBin;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Http;
 use stdClass;
+
+// TODO - If no url found, ask if they would like to store as short url
+// TODO - regex to make sure URL passed is correct
+// TODO - expiry date on urls if passed
+// TODO - unit test to check expiry date is in the future
 
 class MiniURL
 {
 
-    private $jsonBin, $passed, $url, $short_url, $miniUrl;
+    private $jsonBin, $urlStructure, $url, $short_url, $miniUrl, $expiry;
 
     public function __construct()
     {
-        $this->miniUrl = "https://miniurl.untypical.co.uk/";
-        $this->jsonBin = new JsonBin();
+        // link used for short urls
+        $this->miniUrl = "https://short.link/";
     }
 
     /**
      * Shortens URL
      * @returns string $url shortened URL
      */
-    public function short(): MiniURL
+    public function setData(array $data): MiniURL
     {
-        $this->short_url = substr(uniqid(), 0, 6);
+        // generate a random string
+        $this->short_url = $this->generateUniqueId();
+        $this->url = isset($data['url']) ? $data['url'] : false;
+        $this->expiry = isset($data['expiry']) ? $data['expiry'] : false;
         return $this;
+    }
+
+    /**
+     * Shortens URL
+     * @returns string $url shortened URL
+     */
+    public function generateUniqueId(): string
+    {
+        return substr(md5(time().uniqid()), 0, 6);
     }
 
     /**
      * Validation for URL
      * @params string $url URL passed for verification
-     * @return MiniURL $passed
+     * @return void $passed
      */
-    public function validation(string $url): MiniURL
+    public function verifyURL(string $url)
     {
-        $this->url = $url;
-        return $this;
+        // TODO - decide validation tests, write unit test
+        return filter_var($url, FILTER_VALIDATE_URL);
     }
 
     /**
      * Verify URL response
-     * @returns bool $passed
      */
-    public function verifyURLResponse(): MiniURL
+    public function verifyUrlResponse(string $url): bool
     {
-        return $this;
+        try {
+            $response = Http::get($url);
+            return $response->status() === 200;
+        } catch(\Exception $e) {
+            return false;
+        }
     }
 
     /**
-     * Store Short URL in JSON BIN
+     * Store Short URL in database
      * @params string $url string to check response
      * @returns bool $response
      */
@@ -63,9 +85,50 @@ class MiniURL
             DB::table('short_urls')->insert($data);
             return ['status' => true, 'data' => $data];
         } catch (\Exception $e) {
+            // retry the insertion if duplicate entry
+            if($e->getCode() == "23000") {
+                $this->generateUniqueId();
+                return $this->store();
+            } else {
+                return ['status' => false, 'message' => $e->getMessage()];
+            }
+        }
+    }
+
+    /**
+     * Find short url in the database
+     * @params string $url short url to find in the db
+     * @returns bool $response
+     */
+    public function find(string $url): array
+    {
+        try {
+            return (array)DB::table('short_urls')
+            ->select('short_url','url')
+            ->where('short_url', '=', $url)
+            ->get()
+            ->first();
+        } catch(QueryException $e) {
             return ['status' => false, 'message' => $e->getMessage()];
         }
     }
 
+    /**
+     * Find short url in the database using unique id
+     * @params string $id unique id in the database
+     * @returns array $response
+     */
+    public function findById(string $id): array
+    {
+        try {
+            return DB::table('short_urls')
+            ->select('short_url','url')
+            ->where('short_url', '=', $url)
+            ->get()
+            ->first() !== null;
+        } catch(\Exception $e) {
+            return (array)['status' => false, 'message' => $e->getMessage()];
+        }
+    }
 
 }
