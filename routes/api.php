@@ -15,9 +15,9 @@ use App\Http\Controllers\MiniURL;
 |
 */
 
-Route::post('/miniurl/{url}', function (Request $request, $url) {
+Route::post('/shorten', function (Request $request) {
     $miniUrl = new MiniURL();
-    return $miniUrl->short($url);
+    return $miniUrl->short($request->post('url'));
 });
 
 Route::get('/miniurl/{url}', function (Request $request, $url) {

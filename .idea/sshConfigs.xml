@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig host="185.199.220.27" id="97e00f9e-3f0b-46b1-bcec-6fc24a662adf" keyPath="C:\Users\danbo\Documents\SSH\danpc.ppk" port="722" customName="Untypical" nameFormat="CUSTOM" username="untypica">
+        <option name="customName" value="Untypical" />
+      </sshConfig>
+    </configs>
+  </component>
+</project>

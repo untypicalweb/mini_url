@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="a045a06f-3fe3-4e9e-9fde-1e816f6c6185" name="Untypical">
+        <fileTransfer rootFolder="/home/untypica" accessType="SFTP" host="185.199.220.27" port="722" sshConfigId="97e00f9e-3f0b-46b1-bcec-6fc24a662adf" sshConfig="Untypical" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

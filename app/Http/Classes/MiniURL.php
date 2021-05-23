@@ -3,15 +3,17 @@
 namespace App\Http\Classes;
 
 use App\Http\Classes\JsonBin;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 class MiniURL
 {
 
-    private $jsonBin, $passed, $url;
+    private $jsonBin, $passed, $url, $short_url, $miniUrl;
 
     public function __construct()
     {
+        $this->miniUrl = "https://miniurl.untypical.co.uk/";
         $this->jsonBin = new JsonBin();
     }
 
@@ -21,6 +23,7 @@ class MiniURL
      */
     public function short(): MiniURL
     {
+        $this->short_url = substr(uniqid(), 0, 6);
         return $this;
     }
 
@@ -51,7 +54,17 @@ class MiniURL
      */
     public function store(): array
     {
-        return $this->jsonBin->store(['url' => $this->url]);
+        try {
+            $data = [
+                'unique_id' => $this->short_url,
+                'short_url' => $this->miniUrl . $this->short_url,
+                'url' => $this->url
+            ];
+            DB::table('short_urls')->insert($data);
+            return ['status' => true, 'data' => $data];
+        } catch (\Exception $e) {
+            return ['status' => false, 'message' => $e->getMessage()];
+        }
     }
 
 
