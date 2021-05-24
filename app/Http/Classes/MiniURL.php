@@ -31,8 +31,8 @@ class MiniURL
     {
         // generate a random string
         $this->short_url = $this->generateUniqueId();
-        $this->url = isset($data['url']) ? $data['url'] : false;
-        $this->expiry = isset($data['expiry']) ? $data['expiry'] : false;
+        $this->url = $data['url'] ?? false;
+        $this->expiry = $data['expiry'] ?? false;
         return $this;
     }
 
@@ -42,7 +42,25 @@ class MiniURL
      */
     public function generateUniqueId(): string
     {
-        return substr(md5(time().uniqid()), 0, 6);
+        return substr(md5(time() . uniqid()), 0, 6);
+    }
+
+    /**
+     * Set expiry date for URL
+     * @returns string $url shortened URL
+     */
+    public function expiry(string $expiry)
+    {
+        $date = \DateTime::createFromFormat("Y-m-d", $expiry)->format('Y-m-d H:i:s');
+        if ($date >= date('Y-m-d 23:59:59')) {
+            return false;
+        }
+        if ($date) {
+            $this->expiry = $expiry;
+            return $this;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -64,7 +82,7 @@ class MiniURL
         try {
             $response = Http::get($url);
             return $response->status() === 200;
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -82,11 +100,14 @@ class MiniURL
                 'short_url' => $this->miniUrl . $this->short_url,
                 'url' => $this->url
             ];
+            if ($this->expiry) {
+                $data['expiry'] = $this->expiry;
+            }
             DB::table('short_urls')->insert($data);
             return ['status' => true, 'data' => $data];
         } catch (\Exception $e) {
             // retry the insertion if duplicate entry
-            if($e->getCode() == "23000") {
+            if ($e->getCode() == "23000") {
                 $this->generateUniqueId();
                 return $this->store();
             } else {
@@ -103,12 +124,24 @@ class MiniURL
     public function find(string $url): array
     {
         try {
-            return (array)DB::table('short_urls')
-            ->select('short_url','url')
-            ->where('short_url', '=', $url)
-            ->get()
-            ->first();
-        } catch(QueryException $e) {
+            $record = (array)DB::table('short_urls')
+                ->select('short_url', 'url', 'expiry')
+                ->where('short_url', '=', $url)
+                ->get()
+                ->first();
+            // check to see if a record exists
+            if ($record) {
+                // if the record has expired, let the user know
+                if ($record['expiry'] && $record['expiry'] <= date('Y-m-d H:i:s')) {
+                    return ['status' => false, 'message' => 'This expired on ' . $record['expiry'] . '.'];
+                }
+                return $record;
+            } else {
+                // if there were no matching records let the user know
+                return ['status' => false, 'message' => 'There are no urls matching ' . $url . '.'];
+            }
+        } catch (QueryException $e) {
+            // catch errors and return response
             return ['status' => false, 'message' => $e->getMessage()];
         }
     }
@@ -122,11 +155,11 @@ class MiniURL
     {
         try {
             return DB::table('short_urls')
-            ->select('short_url','url')
-            ->where('short_url', '=', $url)
-            ->get()
-            ->first() !== null;
-        } catch(\Exception $e) {
+                    ->select('short_url', 'url')
+                    ->where('short_url', '=', $url)
+                    ->get()
+                    ->first() !== null;
+        } catch (\Exception $e) {
             return (array)['status' => false, 'message' => $e->getMessage()];
         }
     }
