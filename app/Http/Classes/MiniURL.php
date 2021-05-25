@@ -52,7 +52,7 @@ class MiniURL
     public function expiry(string $expiry)
     {
         $date = \DateTime::createFromFormat("Y-m-d", $expiry)->format('Y-m-d H:i:s');
-        if ($date >= date('Y-m-d 23:59:59')) {
+        if ($date <= date('Y-m-d 23:59:59')) {
             return false;
         }
         if ($date) {
