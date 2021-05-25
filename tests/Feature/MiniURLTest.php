@@ -87,4 +87,17 @@ class MiniURLTest extends TestCase
         $response = (new MiniURL())->find("https://short.link/7e2b62");
         $this->assertEquals(false, $response['status']);
     }
+
+    /** @test */
+    /*
+    * Feature Test for MiniURL->generate
+    * Expected true
+    */
+    public function generateUniqueId()
+    {
+        // we only want unique ids consisting of numbers and letters
+        $id = (new MiniURL())->generateUniqueId();
+        $response = preg_match('/([a-zA-Z0-9])/', $id);
+        $this->assertEquals(true, $response);
+    }
 }

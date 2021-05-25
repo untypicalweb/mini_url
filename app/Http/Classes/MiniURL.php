@@ -15,7 +15,7 @@ use stdClass;
 class MiniURL
 {
 
-    private $jsonBin, $urlStructure, $url, $short_url, $miniUrl, $expiry;
+    private $jsonBin, $urlStructure, $url, $short_url, $miniUrl, $expiry, $verifyURL = false, $verifyUrlResponse = false;
 
     public function __construct()
     {
@@ -70,7 +70,8 @@ class MiniURL
      */
     public function verifyURL(string $url): bool
     {
-        return filter_var($url, FILTER_VALIDATE_URL);
+        $this->verifyURL = filter_var($url, FILTER_VALIDATE_URL) !== false;
+        return $this->verifyURL;
     }
 
     /**
@@ -81,7 +82,8 @@ class MiniURL
         try {
             // simple http request to get the response status
             $response = Http::get($url);
-            return $response->status() === 200;
+            $this->verifyUrlResponse = $response->status() === 200;
+            return $this->verifyUrlResponse;
         } catch (\Exception $e) {
             return false;
         }
@@ -104,7 +106,15 @@ class MiniURL
             if ($this->expiry) {
                 $data['expiry'] = $this->expiry;
             }
+
+            // insert the record into our database
             DB::table('short_urls')->insert($data);
+
+            // pass back the verifications to the user
+            $data['verified_url_check'] = $this->verifyURL;
+            $data['verified_response_check'] = $this->verifyUrlResponse;
+
+            // return the data
             return ['status' => true, 'data' => $data];
         } catch (\Exception $e) {
             // retry the insertion if duplicate entry
