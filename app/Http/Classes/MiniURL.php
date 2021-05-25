@@ -66,11 +66,10 @@ class MiniURL
     /**
      * Validation for URL
      * @params string $url URL passed for verification
-     * @return void $passed
+     * @return bool $passed
      */
-    public function verifyURL(string $url)
+    public function verifyURL(string $url): bool
     {
-        // TODO - decide validation tests, write unit test
         return filter_var($url, FILTER_VALIDATE_URL);
     }
 
@@ -80,6 +79,7 @@ class MiniURL
     public function verifyUrlResponse(string $url): bool
     {
         try {
+            // simple http request to get the response status
             $response = Http::get($url);
             return $response->status() === 200;
         } catch (\Exception $e) {
@@ -100,6 +100,7 @@ class MiniURL
                 'short_url' => $this->miniUrl . $this->short_url,
                 'url' => $this->url
             ];
+            // add the expiry date if it has been set
             if ($this->expiry) {
                 $data['expiry'] = $this->expiry;
             }
@@ -135,6 +136,7 @@ class MiniURL
                 if ($record['expiry'] && $record['expiry'] <= date('Y-m-d H:i:s')) {
                     return ['status' => false, 'message' => 'This expired on ' . $record['expiry'] . '.'];
                 }
+                $record['status'] = true;
                 return $record;
             } else {
                 // if there were no matching records let the user know

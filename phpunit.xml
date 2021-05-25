@@ -10,7 +10,6 @@
         </testsuite>
         <testsuite name="Feature">
             <directory suffix="Test.php">./tests/Feature</directory>
-            <file>./tests/Feature/MiniURLTest.php</file>
         </testsuite>
     </testsuites>
     <coverage processUncoveredFiles="true">
